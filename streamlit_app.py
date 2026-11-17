@@ -20,6 +20,36 @@ from activity_log.storage import (
     save_daily_record,
 )
 
+TRAINING_EXERCISES = (
+    "01_ショルダープレス",
+    "02_チェストプレス",
+    "03_ラットプルダウン",
+    "04_バイセップスカール",
+    "05_ディップス",
+    "06_レッグプレス",
+    "07_アダクション",
+    "08_アブダクション",
+    "09_アブドミナルトレーナー",
+    "10_アブベンチ",
+    "11_トレッドミル",
+    "12_バイク",
+)
+DEFAULT_MOVE_GOAL_KCAL = 550.0
+DEFAULT_EXERCISE_GOAL_MINUTES = 30.0
+DEFAULT_STAND_GOAL_HOURS = 12.0
+
+
+def _ring_goal_for_save(
+    actual: float | None,
+    goal: float | None,
+    default_goal: float,
+    saved_goal: float | None,
+) -> float | None:
+    if actual is None and saved_goal is None and goal == default_goal:
+        return None
+    return goal
+
+
 st.set_page_config(
     page_title="日々のアクティビティ",
     page_icon=":material/directions_run:",
@@ -67,7 +97,9 @@ if page == "記録":
             key=f"floors_{date_key}",
         )
 
-        st.caption("リングの実績と目標値を入力すると達成率を表示します。")
+        st.caption(
+            "目標値は初期値です。実績と一緒に入力すると保存され、達成率を表示します。"
+        )
         ring_cols = st.columns(3)
         move_kcal = ring_cols[0].number_input(
             "ムーブ実績 (kcal)",
@@ -79,7 +111,11 @@ if page == "記録":
         move_goal_kcal = ring_cols[0].number_input(
             "ムーブ目標 (kcal)",
             min_value=0.0,
-            value=existing.move_goal_kcal if existing is not None else None,
+            value=(
+                existing.move_goal_kcal
+                if existing is not None and existing.move_goal_kcal is not None
+                else DEFAULT_MOVE_GOAL_KCAL
+            ),
             step=1.0,
             key=f"move_goal_{date_key}",
         )
@@ -93,7 +129,12 @@ if page == "記録":
         exercise_goal_minutes = ring_cols[1].number_input(
             "エクササイズ目標 (分)",
             min_value=0.0,
-            value=existing.exercise_goal_minutes if existing is not None else None,
+            value=(
+                existing.exercise_goal_minutes
+                if existing is not None
+                and existing.exercise_goal_minutes is not None
+                else DEFAULT_EXERCISE_GOAL_MINUTES
+            ),
             step=1.0,
             key=f"exercise_goal_{date_key}",
         )
@@ -107,7 +148,11 @@ if page == "記録":
         stand_goal_hours = ring_cols[2].number_input(
             "スタンド目標 (時間)",
             min_value=0.0,
-            value=existing.stand_goal_hours if existing is not None else None,
+            value=(
+                existing.stand_goal_hours
+                if existing is not None and existing.stand_goal_hours is not None
+                else DEFAULT_STAND_GOAL_HOURS
+            ),
             step=1.0,
             key=f"stand_goal_{date_key}",
         )
@@ -133,11 +178,26 @@ if page == "記録":
             steps=steps,
             floors_climbed=floors_climbed,
             move_kcal=move_kcal,
-            move_goal_kcal=move_goal_kcal,
+            move_goal_kcal=_ring_goal_for_save(
+                move_kcal,
+                move_goal_kcal,
+                DEFAULT_MOVE_GOAL_KCAL,
+                existing.move_goal_kcal if existing is not None else None,
+            ),
             exercise_minutes=exercise_minutes,
-            exercise_goal_minutes=exercise_goal_minutes,
+            exercise_goal_minutes=_ring_goal_for_save(
+                exercise_minutes,
+                exercise_goal_minutes,
+                DEFAULT_EXERCISE_GOAL_MINUTES,
+                existing.exercise_goal_minutes if existing is not None else None,
+            ),
             stand_hours=stand_hours,
-            stand_goal_hours=stand_goal_hours,
+            stand_goal_hours=_ring_goal_for_save(
+                stand_hours,
+                stand_goal_hours,
+                DEFAULT_STAND_GOAL_HOURS,
+                existing.stand_goal_hours if existing is not None else None,
+            ),
             strength_minutes=strength_minutes,
             note=note,
         )
@@ -208,9 +268,11 @@ if page == "記録":
         st.caption("この日のランニング記録はありません。")
 
     st.subheader("筋トレ")
+    st.caption("種目は自由入力または候補から選択できます。1セットにつき一方を入力してください。")
     empty_sets = pd.DataFrame(
         {
-            "種目": pd.Series(dtype="string"),
+            "種目 (自由入力)": pd.Series(dtype="string"),
+            "種目 (候補選択)": pd.Series(dtype="string"),
             "重量 (kg)": pd.Series(dtype="float64"),
             "回数": pd.Series(dtype="int64"),
         }
@@ -220,7 +282,12 @@ if page == "記録":
             empty_sets,
             num_rows="dynamic",
             column_config={
-                "種目": st.column_config.TextColumn("種目"),
+                "種目 (自由入力)": st.column_config.TextColumn(
+                    "種目 (自由入力)"
+                ),
+                "種目 (候補選択)": st.column_config.SelectboxColumn(
+                    "種目 (候補選択)", options=TRAINING_EXERCISES
+                ),
                 "重量 (kg)": st.column_config.NumberColumn(
                     "重量 (kg)", min_value=0.0, step=0.5, format="%.1f"
                 ),
@@ -235,23 +302,38 @@ if page == "記録":
         strength_submitted = st.form_submit_button("筋トレセットを追加")
 
     if strength_submitted:
-        rows = [
-            {
-                "exercise": (
-                    str(row["種目"]) if not pd.isna(row["種目"]) else None
-                ),
-                "weight_kg": (
-                    float(row["重量 (kg)"])
-                    if not pd.isna(row["重量 (kg)"])
-                    else None
-                ),
-                "repetitions": (
-                    int(row["回数"]) if not pd.isna(row["回数"]) else None
-                ),
-            }
-            for row in edited_sets.to_dict(orient="records")
-        ]
         try:
+            rows = []
+            for row in edited_sets.to_dict(orient="records"):
+                free_exercise = (
+                    None
+                    if pd.isna(row["種目 (自由入力)"])
+                    else str(row["種目 (自由入力)"]).strip() or None
+                )
+                selected_exercise = (
+                    None
+                    if pd.isna(row["種目 (候補選択)"])
+                    else str(row["種目 (候補選択)"]).strip() or None
+                )
+                if free_exercise is not None and selected_exercise is not None:
+                    raise ValueError(
+                        "筋トレの種目は自由入力か候補選択のどちらか一方にしてください。"
+                    )
+                rows.append(
+                    {
+                        "exercise": free_exercise or selected_exercise,
+                        "weight_kg": (
+                            float(row["重量 (kg)"])
+                            if not pd.isna(row["重量 (kg)"])
+                            else None
+                        ),
+                        "repetitions": (
+                            int(row["回数"])
+                            if not pd.isna(row["回数"])
+                            else None
+                        ),
+                    }
+                )
             inserted = add_strength_sets(activity_date, rows)
         except ValueError as error:
             st.error(str(error))
