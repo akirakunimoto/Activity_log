@@ -474,7 +474,7 @@ else:
                 if chart_data.empty:
                     st.info(f"{metric_label}の記録はありません。")
                 else:
-                    st.line_chart(
+                    st.bar_chart(
                         chart_data,
                         x="activity_date",
                         y="値",
