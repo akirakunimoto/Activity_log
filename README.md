@@ -1,6 +1,6 @@
 # 日々のアクティビティ記録
 
-Streamlit と SQLite を使った、個人用のローカル記録ツールです。データはWindowsの `%LOCALAPPDATA%\activity-log\activity.sqlite3`（他のOSではユーザーのローカルデータ領域）に保存され、外部サービスには送信しません。ワークスペースがOneDrive配下でも、記録データはOneDrive同期対象に入りません。
+Streamlit と SQLite を使った、個人用のローカル記録ツールです。データはワークスペースのルートにある `activity.sqlite3` に保存され、外部サービスには送信しません。ワークスペースがOneDriveなどの同期対象フォルダー内にある場合、このDBも同期されます。DBファイルはGitの追跡対象外です。
 
 ## ドキュメント
 
@@ -15,10 +15,10 @@ PowerShell でワークスペースのルートから実行します。
 
 ```powershell
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\streamlit.exe run streamlit_app.py
+.\.venv\Scripts\python.exe -m streamlit run streamlit_app.py
 ```
 
-ローカルのブラウザーで表示された URL を開きます。記録データをバックアップする場合は、アプリを終了してから `%LOCALAPPDATA%\activity-log\activity.sqlite3` をコピーしてください。
+ローカルのブラウザーで表示された URL を開きます。記録データをバックアップする場合は、アプリを終了してからワークスペース直下の `activity.sqlite3` をコピーしてください。
 
 ## テストと型チェック
 

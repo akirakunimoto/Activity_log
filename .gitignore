@@ -2,3 +2,6 @@
 __pycache__/
 *.py[cod]
 data/
+activity.sqlite3
+activity.sqlite3-shm
+activity.sqlite3-wal

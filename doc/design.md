@@ -7,7 +7,7 @@
   └─ ローカルブラウザー
        └─ Streamlit UI (streamlit_app.py)
             ├─ 保存・取得 (activity_log/storage.py)
-            │    └─ SQLite (%LOCALAPPDATA%/activity-log/activity.sqlite3)
+            │    └─ SQLite (ワークスペース直下/activity.sqlite3)
             └─ 計算・集計 (activity_log/analytics.py)
 ```
 
@@ -118,11 +118,11 @@ SQLiteは起動時に `CREATE TABLE IF NOT EXISTS` で初期化する。日付�
 
 ## 5. データ保存とトランザクション
 
-- Windowsでは環境変数 `LOCALAPPDATA` を使い、`%LOCALAPPDATA%\activity-log\activity.sqlite3` に保存する。
-- `LOCALAPPDATA` が定義されない環境では `~/.local/share/activity-log/activity.sqlite3` を使う。
-- 親ディレクトリは接続時に作成する。DB接続はトランザクション管理コンテキストを使い、例外時はロールバックする。
+- OSや起動時の作業ディレクトリによらず、ワークスペース直下の `activity.sqlite3` に保存する。保存先は `storage.py` の配置を基準に解決する。
+- DB接続はトランザクション管理コンテキストを使い、例外時はロールバックする。
 - すべての利用者入力値はSQLプレースホルダー経由で渡す。
-- バックアップの正式手順はアプリを終了後にDBファイルをコピーすること。同期フォルダーへDBを直接置かない。
+- バックアップの正式手順はアプリを終了後にDBファイルをコピーすること。ワークスペースがOneDrive等の同期対象内にある場合、DBも同期される。
+- `activity.sqlite3` とSQLiteの一時ファイルは `.gitignore` でGitの追跡対象から除外する。
 
 ## 6. 技術・依存関係
 

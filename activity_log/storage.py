@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import math
-import os
 import sqlite3
 from contextlib import closing, contextmanager
 from dataclasses import dataclass
@@ -10,13 +9,7 @@ from pathlib import Path
 from typing import Generator, Iterable, Mapping
 
 DatabasePath = str | Path
-_local_app_data = os.environ.get("LOCALAPPDATA")
-if _local_app_data:
-    DEFAULT_DB_PATH = Path(_local_app_data) / "activity-log" / "activity.sqlite3"
-else:
-    DEFAULT_DB_PATH = (
-        Path.home() / ".local" / "share" / "activity-log" / "activity.sqlite3"
-    )
+DEFAULT_DB_PATH = Path(__file__).resolve().parents[1] / "activity.sqlite3"
 
 
 @dataclass(frozen=True)

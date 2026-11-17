@@ -44,7 +44,7 @@
 アプリを起動する。
 
 ```powershell
-.\.venv\Scripts\streamlit.exe run streamlit_app.py
+.\.venv\Scripts\python.exe -m streamlit run streamlit_app.py
 ```
 
 ローカルブラウザーで次を確認する。
@@ -62,7 +62,7 @@
 Agent APIを有効にして起動する方法。ポートを利用可能な値に変更してもよい。
 
 ```powershell
-.\.venv\Scripts\streamlit.exe run streamlit_app.py --server.headless=true --server.address=127.0.0.1 --server.port=8765 --server.enableAgentApi=true
+.\.venv\Scripts\python.exe -m streamlit run streamlit_app.py --server.headless=true --server.address=127.0.0.1 --server.port=8765 --server.enableAgentApi=true
 ```
 
 別のPowerShellでヘルスチェックと初期画面を確認する。
@@ -80,7 +80,7 @@ $body = '{"session_id":"' + $sessionId + '","widget_state":{"main_page":"\u632f\
 Invoke-RestMethod -Uri http://127.0.0.1:8765/_stcore/agent/interact -Method Post -ContentType 'application/json' -Body $body
 ```
 
-記録の追加・削除はDBに書き込む操作である。テストデータを使う場合は、本番データを避けるため `LOCALAPPDATA` を一時ディレクトリに向けた専用プロセスで実行し、完了後にサーバーを停止する。
+記録の追加・削除はDBに書き込む操作である。アプリはワークスペース直下の `activity.sqlite3` を使うため、本番データを避けて画面を確認する場合は、ワークスペースを一時ディレクトリへコピーしてそのコピーから起動する。確認後はサーバーを停止し、一時コピーを破棄する。
 
 ## 5. 合格基準
 

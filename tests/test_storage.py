@@ -4,6 +4,7 @@ from tempfile import TemporaryDirectory
 import unittest
 
 from activity_log.storage import (
+    DEFAULT_DB_PATH,
     DailyRecord,
     add_run,
     add_strength_sets,
@@ -26,6 +27,10 @@ class StorageTests(unittest.TestCase):
 
     def tearDown(self) -> None:
         self.temp_dir.cleanup()
+
+    def test_default_database_is_in_workspace_root(self) -> None:
+        expected_path = Path(__file__).resolve().parents[1] / "activity.sqlite3"
+        self.assertEqual(DEFAULT_DB_PATH, expected_path)
 
     def test_daily_record_upsert_and_ring_validation(self) -> None:
         record_date = date(2026, 11, 17)
