@@ -1,0 +1,1 @@
+"""Local activity tracking application."""
